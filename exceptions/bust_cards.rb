@@ -1,0 +1,2 @@
+class BustCards < StandardError
+end
