@@ -1,0 +1,2 @@
+class ToManyCards < StandardError
+end

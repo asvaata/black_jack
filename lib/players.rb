@@ -1,7 +1,10 @@
 require_relative 'deck'
 require_relative '../exceptions/bust_cards'
+require_relative '../exceptions/to_many_cards'
 class Players
   attr_accessor :bank, :cards, :sum_card, :ace
+
+  REGEXP = /^[KQJ]$/.freeze
 
   def initialize
     @deck = Deck.new
@@ -19,11 +22,11 @@ class Players
   def find_ace
     @sum_card = 0
     @cards.each do |card|
-      if card[0..-2] == 'A'
-        @ace = card
-        @cards.delete(card)
-        @cards << @ace
-      end
+      next unless card[0..-2] == 'A'
+
+      @ace = card
+      @cards.delete(card)
+      @cards << @ace
     end
     calculate_sum_card
   end
@@ -33,17 +36,11 @@ class Players
       if card[0..-2].to_i > 0
         @sum_card += card[0..-2].to_i
       elsif card == @ace
-        if (@sum_card + 11) > 21
-          @sum_card += 1
-        else
-          @sum_card += 11
-        end
-      elsif card[0..-2].to_i == 0
-        case card[0..-2]
-        when 'K' then @sum_card += 10
-        when 'Q' then @sum_card += 10
-        when 'J' then @sum_card += 10
-        end
+        return @sum_card += 1 if (@sum_card + 11) > 21
+
+        return @sum_card += 11
+      elsif card[0..-2] =~ REGEXP
+        @sum_card += 10
       end
     end
   end
@@ -51,7 +48,8 @@ class Players
   def add_card
     @cards << @deck.give_card
     find_ace
-    raise BustCards.new 'перебор' if @sum_card > 21
+    raise BustCards, 'Перебор' if @sum_card > 21
+    raise ToManyCards, 'У вас уже 3 карты' if @cards.length > 3
   end
 
   private

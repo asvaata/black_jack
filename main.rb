@@ -1,10 +1,7 @@
 class Main
-  require_relative 'class/deck'
-  require_relative 'class/dealer'
-  require_relative 'class/user'
-  require_relative 'modules/exceptions'
-
-  include Exceptions
+  require_relative 'lib/deck'
+  require_relative 'lib/dealer'
+  require_relative 'lib/user'
 
   CHOOSE_ACTION = <<-MENU.freeze
   Выбирите действие:
@@ -17,6 +14,7 @@ class Main
   ENTER_TO_CONTINUE = 'Нажмите любую клавишу чтобы продолжить...'.freeze
   DEALER_ADD_CARD = 'Диллер взял карту'.freeze
   END_GAME = 'Хотите попробывать еще?'.freeze
+  WRONG_INPUT = 'Вы ввели не правильное значение'.freeze
 
   def start_game
     puts ENTER_NAME
@@ -28,9 +26,11 @@ class Main
   end
 
   def take_card
-    puts "Cумма карт #{@user.sum_card}, твои карты #{@user.cards}, ставка 10$"
-    puts 'Карты диллера **, ставка 10$'
-    @user.bank -= 10 && @dealer.bank -= 10
+    puts "Сумма карт #{@user.sum_card}, твои карты #{@user.cards}, банк составляет #{@user.bank}"
+    puts "Карты диллера **, банк составляет #{@user.bank}"
+    @user.bank -= 10
+    @dealer.bank -= 10
+    @game_money = 20
     puts ENTER_TO_CONTINUE
     action if gets
   end
@@ -43,6 +43,8 @@ class Main
     when 1 then skip_action
     when 2 then add_card
     when 3 then open_card
+    else
+      wrong_input
     end
   end
 
@@ -50,35 +52,44 @@ class Main
     @dealer.action
     puts DEALER_ADD_CARD
     action
-  rescue StandardError::SkipMoveDealer => e
+  rescue SkipMoveDealer => e
     puts e.message
     action
-  rescue StandardError::BustCards => e
+  rescue BustCards => e
     puts "У диллера #{e.message}, банк диллера составляет #{@dealer.bank}"
     end_game
   end
 
   def add_card
     @user.add_card
-    puts "Cумма карт #{@user.sum_card}, твои карты #{@user.cards}"
+    puts "Сумма карт #{@user.sum_card}, твои карты #{@user.cards}"
     action
-  rescue StandardError::BustCards => e
-    puts "У вас #{e.message}, ваш банк составляет #{@user.bank}"
+  rescue BustCards => e
+    puts "У вас #{e.message}, сумма карт: #{@user.sum_card}, ваши карты #{@user.cards}, ваш банк составляет #{@user.bank}"
     end_game
+  rescue ToManyCards => e
+    puts e.message
+    action
   end
 
   def open_card
+    begin
+    @dealer.action
+    rescue SkipMoveDealer, BustCards => e
+      puts e.message
+    ensure
     winner = if @dealer.sum_card > @user.sum_card
                @dealer.bank += @game_money
-               "Диллер"
+               :Dealer
              else
                @user.bank += @game_money
                @name
              end
-    puts "Cумма карт игрока #{@name}: #{@user.sum_card}, карты #{@user.cards}"
-    puts "Cумма карт игрока диллер: #{@dealer.sum_card}, карты #{@dealer.cards}"
     puts "Выйграл #{winner}"
+    puts "Сумма карт игрока #{@name}: #{@user.sum_card}, карты #{@user.cards}, банк #{@user.bank}"
+    puts "Сумма карт игрока диллер: #{@dealer.sum_card}, карты #{@dealer.cards}, банк #{@dealer.bank}"
     end_game
+    end
   end
 
   def end_game
@@ -89,7 +100,13 @@ class Main
     take_card if gets
   end
 
-  alias_method :skip_action, :dealer_action
+  def wrong_input
+    puts WRONG_INPUT
+    puts ENTER_TO_CONTINUE
+    action if gets
+  end
+
+  alias skip_action dealer_action
 
   private
 
