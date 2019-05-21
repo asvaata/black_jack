@@ -1,17 +1,21 @@
 class Deck
 
   def initialize
-    @index_card = -1
     @deck = []
     generate_deck
     shuffle
   end
 
-  def give_card
-    @deck[@index_card += 1]
+  def give_card(match)
+    if match == 1
+      return @deck[@index_card += 1]
+    else
+      return @deck[@index_card += 1], @deck[@index_card += 1]
+    end
   end
 
   def shuffle
+    @index_card = -1
     @deck.shuffle!
   end
 

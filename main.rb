@@ -1,7 +1,5 @@
+require_relative 'lib/logic'
 class Main
-  require_relative 'lib/deck'
-  require_relative 'lib/dealer'
-  require_relative 'lib/user'
 
   CHOOSE_ACTION = <<-MENU.freeze
   Выбирите действие:
@@ -19,18 +17,14 @@ class Main
   def start_game
     puts ENTER_NAME
     @name = gets.chomp
-    @user = User.new
-    @dealer = Dealer.new
-    @game_money = 0
-    take_card
+    @logic = Logic.new(@name)
+    show_card
   end
 
-  def take_card
-    puts "Сумма карт #{@user.sum_card}, твои карты #{@user.cards}, банк составляет #{@user.bank}"
-    puts "Карты диллера **, банк составляет #{@user.bank}"
-    @user.bank -= 10
-    @dealer.bank -= 10
-    @game_money = 20
+  def show_card
+    puts "Сумма карт #{@logic.user.calc.sum_card}," \
+         "твои карты #{@logic.user.hand.cards}, банк составляет #{@logic.user.bank}"
+    puts "Карты диллера **, банк составляет #{@logic.dealer.bank}"
     puts ENTER_TO_CONTINUE
     action if gets
   end
@@ -49,23 +43,24 @@ class Main
   end
 
   def dealer_action
-    @dealer.action
+    @logic.dealer_action
     puts DEALER_ADD_CARD
     action
   rescue SkipMoveDealer => e
     puts e.message
     action
   rescue BustCards => e
-    puts "У диллера #{e.message}, банк диллера составляет #{@dealer.bank}"
+    puts "#{e.message}, банк диллера составляет #{@logic.dealer.bank}"
     end_game
   end
 
   def add_card
-    @user.add_card
-    puts "Сумма карт #{@user.sum_card}, твои карты #{@user.cards}"
+    @logic.user_action
+    puts "Сумма карт #{@logic.user.calc.sum_card}, твои карты #{@logic.user.hand.cards}"
     action
   rescue BustCards => e
-    puts "У вас #{e.message}, сумма карт: #{@user.sum_card}, ваши карты #{@user.cards}, ваш банк составляет #{@user.bank}"
+    puts "#{e.message}, сумма карт: #{@logic.user.calc.sum_card}," \
+         "ваши карты #{@logic.user.hand.cards}, ваш банк составляет #{@logic.user.bank}"
     end_game
   rescue ToManyCards => e
     puts e.message
@@ -74,20 +69,16 @@ class Main
 
   def open_card
     begin
-    @dealer.action
+    @logic.dealer_action
     rescue SkipMoveDealer, BustCards => e
       puts e.message
     ensure
-    winner = if @dealer.sum_card > @user.sum_card
-               @dealer.bank += @game_money
-               :Dealer
-             else
-               @user.bank += @game_money
-               @name
-             end
+    winner = @logic.open_card
     puts "Выйграл #{winner}"
-    puts "Сумма карт игрока #{@name}: #{@user.sum_card}, карты #{@user.cards}, банк #{@user.bank}"
-    puts "Сумма карт игрока диллер: #{@dealer.sum_card}, карты #{@dealer.cards}, банк #{@dealer.bank}"
+    puts "Сумма карт игрока #{@name}: #{@logic.user.calc.sum_card}," \
+         "карты #{@logic.user.hand.cards}, банк #{@logic.user.bank}"
+    puts "Сумма карт игрока диллер: #{@logic.dealer.calc.sum_card}," \
+         "карты #{@logic.dealer.hand.cards}, банк #{@logic.dealer.bank}"
     end_game
     end
   end
@@ -95,9 +86,8 @@ class Main
   def end_game
     puts END_GAME
     puts ENTER_TO_CONTINUE
-    @user.new_game && @dealer.new_game
-    @game_money = 0
-    take_card if gets
+    @logic.new_game
+    show_card if gets
   end
 
   def wrong_input
@@ -107,8 +97,4 @@ class Main
   end
 
   alias skip_action dealer_action
-
-  private
-
-  attr_reader :dealer, :user, :name
 end
