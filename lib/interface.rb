@@ -1,5 +1,5 @@
-require_relative 'lib/logic'
-class Main
+require_relative '../game'
+class Interface
 
   CHOOSE_ACTION = <<-MENU.freeze
   Выбирите действие:
@@ -17,14 +17,15 @@ class Main
   def start_game
     puts ENTER_NAME
     @name = gets.chomp
-    @logic = Logic.new(@name)
+    @game = Game.new
+    @game.new_game(@name)
     show_card
   end
 
   def show_card
-    puts "Сумма карт #{@logic.user.calc.sum_card}," \
-         "твои карты #{@logic.user.hand.cards}, банк составляет #{@logic.user.bank}"
-    puts "Карты диллера **, банк составляет #{@logic.dealer.bank}"
+    puts "Сумма карт #{@game.user.calc.sum_card}," \
+         "твои карты #{@game.user.hand.cards}, банк составляет #{@game.user.bank}"
+    puts "Карты диллера **, банк составляет #{@game.dealer.bank}"
     puts ENTER_TO_CONTINUE
     action if gets
   end
@@ -43,24 +44,24 @@ class Main
   end
 
   def dealer_action
-    @logic.dealer_action
+    @game.dealer_action
     puts DEALER_ADD_CARD
     action
   rescue SkipMoveDealer => e
     puts e.message
     action
   rescue BustCards => e
-    puts "#{e.message}, банк диллера составляет #{@logic.dealer.bank}"
+    puts "#{e.message}, банк диллера составляет #{@game.dealer.bank}"
     end_game
   end
 
   def add_card
-    @logic.user_action
-    puts "Сумма карт #{@logic.user.calc.sum_card}, твои карты #{@logic.user.hand.cards}"
+    @game.user_action
+    puts "Сумма карт #{@game.user.calc.sum_card}, твои карты #{@game.user.hand.cards}"
     action
   rescue BustCards => e
-    puts "#{e.message}, сумма карт: #{@logic.user.calc.sum_card}," \
-         "ваши карты #{@logic.user.hand.cards}, ваш банк составляет #{@logic.user.bank}"
+    puts "#{e.message}, сумма карт: #{@game.user.calc.sum_card}," \
+         "ваши карты #{@game.user.hand.cards}, ваш банк составляет #{@game.user.bank}"
     end_game
   rescue ToManyCards => e
     puts e.message
@@ -69,16 +70,16 @@ class Main
 
   def open_card
     begin
-    @logic.dealer_action
+    @game.dealer_action
     rescue SkipMoveDealer, BustCards => e
       puts e.message
     ensure
-    winner = @logic.open_card
+    winner = @game.open_card
     puts "Выйграл #{winner}"
-    puts "Сумма карт игрока #{@name}: #{@logic.user.calc.sum_card}," \
-         "карты #{@logic.user.hand.cards}, банк #{@logic.user.bank}"
-    puts "Сумма карт игрока диллер: #{@logic.dealer.calc.sum_card}," \
-         "карты #{@logic.dealer.hand.cards}, банк #{@logic.dealer.bank}"
+    puts "Сумма карт игрока #{@name}: #{@game.user.calc.sum_card}," \
+         "карты #{@game.user.hand.cards}, банк #{@game.user.bank}"
+    puts "Сумма карт игрока диллер: #{@game.dealer.calc.sum_card}," \
+         "карты #{@game.dealer.hand.cards}, банк #{@game.dealer.bank}"
     end_game
     end
   end
@@ -86,7 +87,7 @@ class Main
   def end_game
     puts END_GAME
     puts ENTER_TO_CONTINUE
-    @logic.new_game
+    @game.restart_game
     show_card if gets
   end
 

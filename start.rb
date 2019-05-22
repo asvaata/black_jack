@@ -1,5 +1,5 @@
-require_relative 'main'
+require_relative 'lib/interface'
 
-test = Main.new
+test = Interface.new
 
 test.start_game

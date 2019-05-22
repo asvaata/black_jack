@@ -1,15 +1,21 @@
-require_relative 'user'
-require_relative 'dealer'
-require_relative 'card'
-require_relative 'deck'
-require_relative '../exceptions/to_many_cards'
-require_relative '../exceptions/bust_cards'
-require_relative '../exceptions/skip_move_dealer'
+require_relative 'lib/user'
+require_relative 'lib/dealer'
+require_relative 'lib/card'
+require_relative 'lib/deck'
+require_relative 'lib/interface'
+require_relative 'exceptions/to_many_cards'
+require_relative 'exceptions/bust_cards'
+require_relative 'exceptions/skip_move_dealer'
 
-class Logic
+class Game
   attr_reader :user, :dealer, :name
 
-  def initialize(name)
+  def initialize
+    @interface = Interface.new
+    @interface.start_game
+  end
+
+  def new_game(name)
     @deck = Deck.new
     @dealer = Dealer.new
     @user = User.new
@@ -20,7 +26,7 @@ class Logic
     take_card(@user, 2)
   end
 
-  def new_game
+  def restart_game
     @deck.shuffle
     @user.hand.new_game
     @dealer.hand.new_game
@@ -31,19 +37,19 @@ class Logic
   end
 
   def dealer_action
-    raise SkipMoveDealer, 'Диллер пропускает ход' if @dealer.hand.cards.length == 3 || @dealer.calc.sum_card >= 17
+    raise SkipMoveDealer, 'Диллер пропускает ход' if @dealer.hand.enough_cards? || @dealer.hand.enough_points?
 
     take_card(@dealer, 1)
 
-    raise BustCards, 'У диллера перебор' if @dealer.calc.sum_card > 21
+    raise BustCards, 'У диллера перебор' if @dealer.hand.bust?
   end
 
   def user_action
-    raise ToManyCards, 'Вы не можете взять больше 3х карт' if @user.hand.cards.length == 3
+    raise ToManyCards, 'Вы не можете взять больше 3х карт' if @user.hand.enough_cards?
 
     take_card(@user, 1)
 
-    raise BustCards, 'У вас перебор' if @user.calc.sum_card > 21
+    raise BustCards, 'У вас перебор' if @user.hand.bust?
   end
 
   def open_card
@@ -65,3 +71,6 @@ class Logic
     end
   end
 end
+
+start = Game.new
+start.start_game
