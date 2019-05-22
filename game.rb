@@ -72,5 +72,4 @@ class Game
   end
 end
 
-start = Game.new
-start.start_game
+Game.new
