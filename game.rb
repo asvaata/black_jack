@@ -12,7 +12,7 @@ class Game
 
   def initialize
     @interface = Interface.new
-    @interface.start_game
+    @interface.start_game(self)
   end
 
   def new_game(name)

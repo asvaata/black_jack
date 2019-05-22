@@ -1,4 +1,3 @@
-require_relative '../game'
 class Interface
 
   CHOOSE_ACTION = <<-MENU.freeze
@@ -14,10 +13,10 @@ class Interface
   END_GAME = 'Хотите попробывать еще?'.freeze
   WRONG_INPUT = 'Вы ввели не правильное значение'.freeze
 
-  def start_game
+  def start_game(game)
     puts ENTER_NAME
     @name = gets.chomp
-    @game = Game.new
+    @game = game
     @game.new_game(@name)
     show_card
   end
