@@ -8,59 +8,98 @@ require_relative 'exceptions/bust_cards'
 require_relative 'exceptions/skip_move_dealer'
 
 class Game
+
   attr_reader :user, :dealer, :name
 
   def initialize
     @interface = Interface.new
-    @interface.start_game(self)
-  end
-
-  def new_game(name)
     @deck = Deck.new
     @dealer = Dealer.new
     @user = User.new
-    @name = name
-    @user.bank -= 10
-    @dealer.bank -= 10
-    take_card(@dealer, 2)
-    take_card(@user, 2)
+    @name = @interface.ask_name
+    [@user, @dealer].each do |player|
+      player.bank -= 10
+      take_card(player, 2)
+    end
+    @interface.show_card(@user, @dealer)
+    action
   end
 
   def restart_game
     @deck.shuffle
     @user.hand.new_game
     @dealer.hand.new_game
-    @user.bank -= 10
-    @dealer.bank -= 10
-    take_card(@dealer, 2)
-    take_card(@user, 2)
+    [@user, @dealer].each do |player|
+      player.bank -= 10
+      take_card(player, 2)
+    end
+  end
+
+  def action
+    user_input = @interface.choice_action
+
+    case user_input
+    when 1 then dealer_action
+    when 2 then add_card
+    when 3 then open_card
+    else
+      @interface.wrong_input
+      action if gets
+    end
+  end
+
+  def add_card
+    @user.action(self)
+    @interface.add_card(@user.hand.sum_card, @user.hand.cards)
+    action
+  rescue BustCards => e
+    @interface.show_points(e, @user.hand.sum_card, @user.hand.cards, @user.bank)
+    end_game
+  rescue ToManyCards => e
+    @interface.show_message(e)
+    action
   end
 
   def dealer_action
-    raise SkipMoveDealer, 'Диллер пропускает ход' if @dealer.hand.enough_cards? || @dealer.hand.enough_points?
-
-    take_card(@dealer, 1)
-
-    raise BustCards, 'У диллера перебор' if @dealer.hand.bust?
+    @dealer.action(self)
+    @interface.dealer_add_card
+    action
+  rescue SkipMoveDealer => e
+    @interface.show_message(e.message)
+    action
+  rescue BustCards => e
+    @interface.dealer_bust_cards(e.message, @dealer.bank)
+    end_game
   end
 
-  def user_action
-    raise ToManyCards, 'Вы не можете взять больше 3х карт' if @user.hand.enough_cards?
-
-    take_card(@user, 1)
-
-    raise BustCards, 'У вас перебор' if @user.hand.bust?
+  def end_game
+    @interface.end_game
+    restart_game
+    @interface.show_card(@user, @dealer) if gets
+    action
   end
 
   def open_card
-    winner = if @dealer.calc.sum_card > @user.calc.sum_card
-               @dealer.bank += 20
-               :Dealer
-             else
-               @user.bank += 20
-               @name
-             end
-    return winner
+    begin
+      @dealer.action(self)
+    rescue BustCards => e
+      @interface.show_message(e)
+      winner = @name
+      @user.bank += 20
+      @interface.open_card(@user, @dealer, @name, winner)
+      end_game
+    rescue SkipMoveDealer => e
+      @interface.show_message(e)
+      winner = if @dealer.hand.sum_card > @user.hand.sum_card
+                 @dealer.bank += 20
+                 :Dealer
+               else
+                 @user.bank += 20
+                 @name
+               end
+      @interface.open_card(@user, @dealer, @name, winner)
+      end_game
+    end
   end
 
   def take_card(who, match)

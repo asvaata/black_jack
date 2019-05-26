@@ -13,88 +13,63 @@ class Interface
   END_GAME = 'Хотите попробывать еще?'.freeze
   WRONG_INPUT = 'Вы ввели не правильное значение'.freeze
 
-  def start_game(game)
+  def ask_name
     puts ENTER_NAME
-    @name = gets.chomp
-    @game = game
-    @game.new_game(@name)
-    show_card
+    name = gets.chomp
+    name
   end
 
-  def show_card
-    puts "Сумма карт #{@game.user.calc.sum_card}," \
-         "твои карты #{@game.user.hand.cards}, банк составляет #{@game.user.bank}"
-    puts "Карты диллера **, банк составляет #{@game.dealer.bank}"
+  def show_card(user, dealer)
+    puts "Сумма карт #{user.calc.sum_card}," \
+         "твои карты #{user.hand.cards}, банк составляет #{user.bank}"
+    puts "Карты диллера **, банк составляет #{dealer.bank}"
     puts ENTER_TO_CONTINUE
-    action if gets
+    return if gets
   end
 
-  def action
+  def choice_action
     puts CHOOSE_ACTION
     user_input = gets.to_i
 
-    case user_input
-    when 1 then skip_action
-    when 2 then add_card
-    when 3 then open_card
-    else
-      wrong_input
-    end
+    user_input
   end
 
-  def dealer_action
-    @game.dealer_action
+  def add_card(sum_card, cards)
+    puts "Сумма карт #{sum_card}, твои карты #{cards}"
+  end
+
+  def dealer_add_card
     puts DEALER_ADD_CARD
-    action
-  rescue SkipMoveDealer => e
-    puts e.message
-    action
-  rescue BustCards => e
-    puts "#{e.message}, банк диллера составляет #{@game.dealer.bank}"
-    end_game
   end
 
-  def add_card
-    @game.user_action
-    puts "Сумма карт #{@game.user.calc.sum_card}, твои карты #{@game.user.hand.cards}"
-    action
-  rescue BustCards => e
-    puts "#{e.message}, сумма карт: #{@game.user.calc.sum_card}," \
-         "ваши карты #{@game.user.hand.cards}, ваш банк составляет #{@game.user.bank}"
-    end_game
-  rescue ToManyCards => e
-    puts e.message
-    action
+  def show_message(msg)
+    puts msg
   end
 
-  def open_card
-    begin
-    @game.dealer_action
-    rescue SkipMoveDealer, BustCards => e
-      puts e.message
-    ensure
-    winner = @game.open_card
+  def show_points(msg, sum_card, cards, bank)
+    puts "#{msg}, сумма карт: #{sum_card}," \
+         "ваши карты #{cards}, ваш банк составляет #{bank}"
+  end
+
+  def dealer_bust_cards(msg, bank)
+    puts "#{msg}, банк диллера составляет #{bank}"
+  end
+
+  def open_card(user, dealer, name, winner)
     puts "Выйграл #{winner}"
-    puts "Сумма карт игрока #{@name}: #{@game.user.calc.sum_card}," \
-         "карты #{@game.user.hand.cards}, банк #{@game.user.bank}"
-    puts "Сумма карт игрока диллер: #{@game.dealer.calc.sum_card}," \
-         "карты #{@game.dealer.hand.cards}, банк #{@game.dealer.bank}"
-    end_game
-    end
+    puts "Сумма карт игрока #{name}: #{user.hand.sum_card}," \
+         "карты #{user.hand.cards}, банк #{user.bank}"
+    puts "Сумма карт игрока диллер: #{dealer.calc.sum_card}," \
+         "карты #{dealer.hand.cards}, банк #{dealer.bank}"
   end
 
   def end_game
     puts END_GAME
     puts ENTER_TO_CONTINUE
-    @game.restart_game
-    show_card if gets
   end
 
   def wrong_input
     puts WRONG_INPUT
     puts ENTER_TO_CONTINUE
-    action if gets
   end
-
-  alias skip_action dealer_action
 end
