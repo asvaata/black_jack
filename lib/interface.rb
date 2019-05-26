@@ -20,7 +20,7 @@ class Interface
   end
 
   def show_card(user, dealer)
-    puts "Сумма карт #{user.calc.sum_card}," \
+    puts "Сумма карт #{user.hand.sum_card}," \
          "твои карты #{user.hand.cards}, банк составляет #{user.bank}"
     puts "Карты диллера **, банк составляет #{dealer.bank}"
     puts ENTER_TO_CONTINUE
@@ -59,7 +59,7 @@ class Interface
     puts "Выйграл #{winner}"
     puts "Сумма карт игрока #{name}: #{user.hand.sum_card}," \
          "карты #{user.hand.cards}, банк #{user.bank}"
-    puts "Сумма карт игрока диллер: #{dealer.calc.sum_card}," \
+    puts "Сумма карт игрока диллер: #{dealer.hand.sum_card}," \
          "карты #{dealer.hand.cards}, банк #{dealer.bank}"
   end
 

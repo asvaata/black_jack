@@ -1,6 +1,5 @@
 require_relative 'lib/user'
 require_relative 'lib/dealer'
-require_relative 'lib/card'
 require_relative 'lib/deck'
 require_relative 'lib/interface'
 require_relative 'exceptions/to_many_cards'
