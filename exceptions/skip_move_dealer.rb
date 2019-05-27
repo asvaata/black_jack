@@ -1,2 +1,0 @@
-class SkipMoveDealer < StandardError
-end

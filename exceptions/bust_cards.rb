@@ -1,2 +1,0 @@
-class BustCards < StandardError
-end

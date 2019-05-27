@@ -1,2 +1,0 @@
-class ToManyCards < StandardError
-end
